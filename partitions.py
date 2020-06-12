@@ -1,4 +1,3 @@
-import pwd
 import pyslurm
 import pandas as pd
 from prometheus_client.core import GaugeMetricFamily
