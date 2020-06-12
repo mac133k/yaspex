@@ -11,7 +11,16 @@ class JobInfoCollector(object):
 	labels = ['cluster', 'partition', 'user', 'name', 'state']
 	
 	def collect(self):
+		# Metric declarations
 		JOBS_NUM = GaugeMetricFamily('jobs_num', 'Numbers of jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		JOBS_CPU_REQ = GaugeMetricFamily('jobs_cpu_req', 'Numbers of CPUs requested for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		JOBS_CPU_ALLOC = GaugeMetricFamily('jobs_cpu_alloc', 'Numbers of CPUs allocated for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		JOBS_MEM_REQ = GaugeMetricFamily('jobs_mem_req', 'Amounts of memory requested for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels, unit='bytes')
+		JOBS_MEM_ALLOC = GaugeMetricFamily('jobs_mem_alloc', 'Amounts of memory allocated for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels, unit='bytes')
+		JOBS_NODE_REQ = GaugeMetricFamily('jobs_node_req', 'Numbers of nodes requested for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		JOBS_NODE_ALLOC = GaugeMetricFamily('jobs_node_alloc', 'Numbers of nodes allocated for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		
+		# Load job info from Slurm
 		jobs = pyslurm.job().get()
 		jobdf = pd.DataFrame().from_dict(jobs, orient='index').loc[:, self.job_props]
 		# Translate user IDs to names
@@ -30,9 +39,25 @@ class JobInfoCollector(object):
 		# Aggregate rows
 		job_num = jobdf.groupby(self.labels[1:]).count().iloc[:,-1].values
 		jobdf = jobdf.groupby(self.labels[1:]).sum().reset_index()
+		jobdf.loc[:, ['mem_req', 'mem_alloc']] *= 1024**2 # convert from MegaBytes to Bytes
 		jobdf['job_num'] = job_num
 		jobdf['cluster'] = pyslurm.config().get()['cluster_name']
 		# Update the metrics
-		jobdf.apply(lambda row: JOBS_NUM.add_metric(row[self.labels], row['job_num']), axis=1, raw=True)
+		jobdf.apply(lambda row: [
+				JOBS_NUM.add_metric(row[self.labels], row['job_num']),
+				JOBS_CPU_REQ.add_metric(row[self.labels], row['cpu_req']),
+				JOBS_CPU_ALLOC.add_metric(row[self.labels], row['cpu_alloc']),	
+				JOBS_MEM_REQ.add_metric(row[self.labels], row['mem_req']),
+				JOBS_MEM_ALLOC.add_metric(row[self.labels], row['mem_alloc']),	
+				JOBS_NODE_REQ.add_metric(row[self.labels], row['node_req']),
+				JOBS_NODE_ALLOC.add_metric(row[self.labels], row['node_alloc']),	
+			], axis=1, raw=True
+		)
 		yield JOBS_NUM
+		yield JOBS_CPU_REQ
+		yield JOBS_CPU_ALLOC
+		yield JOBS_MEM_REQ
+		yield JOBS_MEM_ALLOC
+		yield JOBS_NODE_REQ
+		yield JOBS_NODE_ALLOC
 
