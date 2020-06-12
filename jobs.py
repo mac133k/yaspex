@@ -39,7 +39,7 @@ class JobInfoCollector(object):
 		# Aggregate rows
 		job_num = jobdf.groupby(self.labels[1:]).count().iloc[:,-1].values
 		jobdf = jobdf.groupby(self.labels[1:]).sum().reset_index()
-		jobdf.loc[:, ['mem_req', 'mem_alloc']] *= 1024**2 # convert from MegaBytes to Bytes
+		jobdf.loc[:, ['mem_req', 'mem_alloc']] *= 1000**2 # convert from MegaBytes to Bytes
 		jobdf['job_num'] = job_num
 		jobdf['cluster'] = pyslurm.config().get()['cluster_name']
 		# Update the metrics
