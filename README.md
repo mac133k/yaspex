@@ -31,7 +31,7 @@ The host where YASPEx is installed must be able to connect to the monitored Slur
 Make sure to use Python v3+ and install the following modules:
 
 ```
-pip install pandas prometheus_client gunicorn
+pip install pandas prometheus_client gunicorn flask
 ```
 
 ### Configuration
