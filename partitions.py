@@ -5,7 +5,7 @@ from prometheus_client.core import GaugeMetricFamily
 
 class PartitionInfoCollector(object):
 	# Job properties of interest
-	part_props = ['name', 'total_nodes', 'total_cpus', 'state']
+	props = ['name', 'total_nodes', 'total_cpus', 'state']
 	# Metric labels
 	labels = ['cluster', 'name']
 	
@@ -16,11 +16,10 @@ class PartitionInfoCollector(object):
 		PART_STATE = GaugeMetricFamily('partitions_state', 'Partition states grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
 		
 		# Load part info from Slurm
-		parts = pyslurm.partition().get()
-		partdf = pd.DataFrame().from_dict(parts, orient='index').loc[:, self.part_props]
-		partdf['cluster'] = pyslurm.config().get()['cluster_name']
+		df = pd.DataFrame().from_dict(pyslurm.partition().get(), orient='index').loc[:, self.props]
+		df['cluster'] = pyslurm.config().get()['cluster_name']
 		# Update the metrics
-		partdf.apply(lambda row: [
+		df.apply(lambda row: [
 				PART_NODES.add_metric(row[self.labels], row['total_nodes']),
 				PART_CPUS.add_metric(row[self.labels], row['total_cpus']),
 				PART_STATE.add_metric(row[self.labels], int(row['state'] == 'UP')),

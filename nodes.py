@@ -5,7 +5,7 @@ from prometheus_client.core import GaugeMetricFamily
 
 class NodeInfoCollector(object):
 	# Node properties of interest
-	node_props = ['name', 'partitions', 'arch', 'cpus', 'cpu_load', 'free_mem', 'real_memory', 'alloc_cpus', 'alloc_mem']
+	props = ['name', 'partitions', 'arch', 'cpus', 'cpu_load', 'free_mem', 'real_memory', 'alloc_cpus', 'alloc_mem']
 	# Metric labels
 	labels = ['cluster', 'partition', 'name', 'arch']
 	
@@ -19,12 +19,11 @@ class NodeInfoCollector(object):
 		NODES_MEM_ALLOC = GaugeMetricFamily('nodes_mem_alloc', 'Amounts of memory allocated on nodes in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels, unit='bytes')
 		
 		# Load node info from Slurm
-		nodes = pyslurm.node().get()
-		nodedf = pd.DataFrame().from_dict(nodes, orient='index').loc[:, self.node_props]
-		nodedf['cluster'] = pyslurm.config().get()['cluster_name']
+		df = pd.DataFrame().from_dict(pyslurm.node().get(), orient='index').loc[:, self.props]
+		df['cluster'] = pyslurm.config().get()['cluster_name']
 		# Tidy up the columns
-		nodedf = nodedf.explode('partitions')
-		nodedf.rename(columns={
+		df = df.explode('partitions')
+		df.rename(columns={
 				'partitions':	'partition',
 				'free_mem':	'mem_free',
 				'real_memory':	'mem_total',
@@ -32,13 +31,13 @@ class NodeInfoCollector(object):
 				'alloc_cpus':	'cpus_alloc'
 			}, inplace=True
 		)
-		nodedf.loc[:, self.labels] = nodedf.loc[:, self.labels].fillna('NA')
-		nodedf = nodedf.fillna(0.0)
-		nodedf['cpu_load'] /= 100.0
-		nodedf.loc[:, ['mem_total', 'mem_alloc']] *= 1000**2 # MB to Bytes
-		nodedf['mem_free'] *= 2**20 # MiB to Bytes
+		df.loc[:, self.labels] = df.loc[:, self.labels].fillna('NA')
+		df = df.fillna(0.0)
+		df['cpu_load'] /= 100.0
+		df.loc[:, ['mem_total', 'mem_alloc']] *= 1000**2 # MB to Bytes
+		df['mem_free'] *= 2**20 # MiB to Bytes
 		# Update the metrics
-		nodedf.apply(lambda row: [
+		df.apply(lambda row: [
 				NODES_CPUS.add_metric(row[self.labels], row['cpus']),	
 				NODES_CPUS_ALLOC.add_metric(row[self.labels], row['cpus_alloc']),	
 				NODES_CPU_LOAD.add_metric(row[self.labels], row['cpu_load']),	
