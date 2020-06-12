@@ -6,10 +6,11 @@ app = Flask('yaspex')
 
 import jobs
 import partitions
-#import nodes
+import nodes
 
 REGISTRY.register(jobs.JobInfoCollector())
 REGISTRY.register(partitions.PartitionInfoCollector())
+REGISTRY.register(nodes.NodeInfoCollector())
 
 @app.route('/')
 def status():
