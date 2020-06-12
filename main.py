@@ -5,14 +5,15 @@ from prometheus_client import multiprocess, generate_latest, CollectorRegistry, 
 app = Flask('yaspex')
 
 import jobs
-#import partitions
+import partitions
 #import nodes
 
 REGISTRY.register(jobs.JobInfoCollector())
+REGISTRY.register(partitions.PartitionInfoCollector())
 
 @app.route('/')
 def status():
-	return Response('PID: {}'.format(os.getpid()))
+	return Response('PID: {}\n'.format(os.getpid()))
 
 
 @app.route('/metrics')
