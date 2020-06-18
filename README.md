@@ -19,6 +19,8 @@ Job resource requirements and allocations are extracted from the respective TRES
 
 One instance of YASPEx can monitor only one Slurm cluster. It does not need to run on a cluster node, but must be able to communicate with Slurm master, so Munge keys and Slurm conf must be locally available.
 
+YASPEx gets the job, partition and node data from Slurm using PySlurm, converts the dictionaries to Pandas dataframes, performs data clean-ups and aggregations, then saves the results in the Prometheus client's metrics registry.
+
 ## Installation
 
 ### Pre-requisites
