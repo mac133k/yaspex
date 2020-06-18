@@ -6,7 +6,8 @@ Yet Another Slurm-to-Prometheus EXporter
 It is written in Python and it uses pyslurm to communicate with the Slurm cluster, so it should be easy to install and set up for Slurm users. It also has a rich collection of metrics:
 
 ```
-                         type                                                                                                  help
+  name                        type                                    help
+---------------------------------------------------------------------------------------------------------------------------------------------------
 slurm_jobs_cpus_alloc         gauge    Numbers of CPUs allocated for jobs in the cluster grouped by cluster, partition, user, name, state
 slurm_jobs_cpus_req           gauge    Numbers of CPUs requested for jobs in the cluster grouped by cluster, partition, user, name, state
 slurm_jobs_mem_alloc_bytes    gauge  Amounts of memory allocated for jobs in the cluster grouped by cluster, partition, user, name, state
