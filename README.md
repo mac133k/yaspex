@@ -4,16 +4,28 @@ Yet Another Slurm-to-Prometheus EXporter
 ## How is it different from others?
 
 It is written in Python and it uses pyslurm to communicate with the Slurm cluster, so it should be easy to install and set up for Slurm users. It also has a rich collection of metrics:
-* jobs: 
-  * metrics: number, CPU req/alloc, memory req/alloc, nodes req/alloc
-  * labels: cluster, partition, user, name, state
-* nodes:
-  * metrics: CPUs total/alloc, CPU load, memory total/free/alloc
-  * labels: cluster, partition, name, arch
-* partitions:
-  * metrics: total numbers of nodes and CPUs, state (UP = 1, otherwise = 0)
 
-Job resource requirements and allocations are extracted from the respective TRES strings.
+```
+                         type                                                                                                  help
+jobs_cpus_alloc         gauge    Numbers of CPUs allocated for jobs in the cluster grouped by cluster, partition, user, name, state
+jobs_cpus_req           gauge    Numbers of CPUs requested for jobs in the cluster grouped by cluster, partition, user, name, state
+jobs_mem_alloc_bytes    gauge  Amounts of memory allocated for jobs in the cluster grouped by cluster, partition, user, name, state
+jobs_mem_req_bytes      gauge  Amounts of memory requested for jobs in the cluster grouped by cluster, partition, user, name, state
+jobs_nodes_alloc        gauge   Numbers of nodes allocated for jobs in the cluster grouped by cluster, partition, user, name, state
+jobs_nodes_req          gauge   Numbers of nodes requested for jobs in the cluster grouped by cluster, partition, user, name, state
+jobs_num                gauge                       Numbers of jobs in the cluster grouped by cluster, partition, user, name, state
+nodes_cpu_load          gauge                           CPU loads on nodes in the cluster grouped by cluster, partition, name, arch
+nodes_cpus              gauge                     Numbers of CPUs on nodes in the cluster grouped by cluster, partition, name, arch
+nodes_cpus_alloc        gauge           Numbers of CPUs allocated on nodes in the cluster grouped by cluster, partition, name, arch
+nodes_mem_alloc_bytes   gauge         Amounts of memory allocated on nodes in the cluster grouped by cluster, partition, name, arch
+nodes_mem_free_bytes    gauge    Amounts of free memory allocated on nodes in the cluster grouped by cluster, partition, name, arch
+nodes_mem_total_bytes   gauge   Total amounts of memory available on nodes in the cluster grouped by cluster, partition, name, arch
+partitions_state        gauge                                                             Partition states grouped by cluster, name
+partitions_total_cpus   gauge                                          Total numbers of CPUs per partition grouped by cluster, name
+partitions_total_nodes  gauge                                         Total numbers of nodes per partition grouped by cluster, name
+```
+
+The labels used for each metric are mentioned in the help section after `grouped by`. Job resource requirements and allocations are extracted from the respective TRES strings.
 
 ## How does it work?
 
