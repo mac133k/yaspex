@@ -11,9 +11,9 @@ class PartitionInfoCollector(object):
 	
 	def collect(self):
 		# Metric declarations
-		PART_NODES = GaugeMetricFamily('partitions_total_nodes', 'Total numbers of nodes per partition grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
-		PART_CPUS = GaugeMetricFamily('partitions_total_cpus', 'Total numbers of CPUs per partition grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
-		PART_STATE = GaugeMetricFamily('partitions_state', 'Partition states grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		PART_NODES = GaugeMetricFamily('slurm_partitions_total_nodes', 'Total numbers of nodes per partition grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		PART_CPUS = GaugeMetricFamily('slurm_partitions_total_cpus', 'Total numbers of CPUs per partition grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		PART_STATE = GaugeMetricFamily('slurm_partitions_state', 'Partition states grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
 		
 		# Load part info from Slurm
 		df = pd.DataFrame().from_dict(pyslurm.partition().get(), orient='index').loc[:, self.props]

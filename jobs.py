@@ -12,13 +12,13 @@ class JobInfoCollector(object):
 	
 	def collect(self):
 		# Metric declarations
-		JOBS_NUM = GaugeMetricFamily('jobs_num', 'Numbers of jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
-		JOBS_CPUS_REQ = GaugeMetricFamily('jobs_cpus_req', 'Numbers of CPUs requested for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
-		JOBS_CPUS_ALLOC = GaugeMetricFamily('jobs_cpus_alloc', 'Numbers of CPUs allocated for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
-		JOBS_MEM_REQ = GaugeMetricFamily('jobs_mem_req', 'Amounts of memory requested for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels, unit='bytes')
-		JOBS_MEM_ALLOC = GaugeMetricFamily('jobs_mem_alloc', 'Amounts of memory allocated for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels, unit='bytes')
-		JOBS_NODES_REQ = GaugeMetricFamily('jobs_nodes_req', 'Numbers of nodes requested for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
-		JOBS_NODES_ALLOC = GaugeMetricFamily('jobs_nodes_alloc', 'Numbers of nodes allocated for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		JOBS_NUM = GaugeMetricFamily('slurm_jobs_num', 'Numbers of jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		JOBS_CPUS_REQ = GaugeMetricFamily('slurm_jobs_cpus_req', 'Numbers of CPUs requested for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		JOBS_CPUS_ALLOC = GaugeMetricFamily('slurm_jobs_cpus_alloc', 'Numbers of CPUs allocated for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		JOBS_MEM_REQ = GaugeMetricFamily('slurm_jobs_mem_req', 'Amounts of memory requested for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels, unit='bytes')
+		JOBS_MEM_ALLOC = GaugeMetricFamily('slurm_jobs_mem_alloc', 'Amounts of memory allocated for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels, unit='bytes')
+		JOBS_NODES_REQ = GaugeMetricFamily('slurm_jobs_nodes_req', 'Numbers of nodes requested for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		JOBS_NODES_ALLOC = GaugeMetricFamily('slurm_jobs_nodes_alloc', 'Numbers of nodes allocated for jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
 		
 		# Load job info from Slurm
 		df = pd.DataFrame().from_dict(pyslurm.job().get(), orient='index').loc[:, self.props]

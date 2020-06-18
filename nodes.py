@@ -11,12 +11,12 @@ class NodeInfoCollector(object):
 	
 	def collect(self):
 		# Metric declarations
-		NODES_CPUS = GaugeMetricFamily('nodes_cpus', 'Numbers of CPUs on nodes in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
-		NODES_CPUS_ALLOC = GaugeMetricFamily('nodes_cpus_alloc', 'Numbers of CPUs allocated on nodes in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
-		NODES_CPU_LOAD = GaugeMetricFamily('nodes_cpu_load', 'CPU loads on nodes in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
-		NODES_MEM_TOTAL = GaugeMetricFamily('nodes_mem_total', 'Total amounts of memory available on nodes in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels, unit='bytes')
-		NODES_MEM_FREE = GaugeMetricFamily('nodes_mem_free', 'Amounts of free memory allocated on nodes in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels, unit='bytes')
-		NODES_MEM_ALLOC = GaugeMetricFamily('nodes_mem_alloc', 'Amounts of memory allocated on nodes in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels, unit='bytes')
+		NODES_CPUS = GaugeMetricFamily('slurm_nodes_cpus', 'Numbers of CPUs on nodes in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		NODES_CPUS_ALLOC = GaugeMetricFamily('slurm_nodes_cpus_alloc', 'Numbers of CPUs allocated on nodes in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		NODES_CPU_LOAD = GaugeMetricFamily('slurm_nodes_cpu_load', 'CPU loads on nodes in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
+		NODES_MEM_TOTAL = GaugeMetricFamily('slurm_nodes_mem_total', 'Total amounts of memory available on nodes in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels, unit='bytes')
+		NODES_MEM_FREE = GaugeMetricFamily('slurm_nodes_mem_free', 'Amounts of free memory allocated on nodes in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels, unit='bytes')
+		NODES_MEM_ALLOC = GaugeMetricFamily('slurm_nodes_mem_alloc', 'Amounts of memory allocated on nodes in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels, unit='bytes')
 		
 		# Load node info from Slurm
 		df = pd.DataFrame().from_dict(pyslurm.node().get(), orient='index').loc[:, self.props]
