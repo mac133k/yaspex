@@ -7,22 +7,22 @@ It is written in Python and it uses pyslurm to communicate with the Slurm cluste
 
 ```
                          type                                                                                                  help
-jobs_cpus_alloc         gauge    Numbers of CPUs allocated for jobs in the cluster grouped by cluster, partition, user, name, state
-jobs_cpus_req           gauge    Numbers of CPUs requested for jobs in the cluster grouped by cluster, partition, user, name, state
-jobs_mem_alloc_bytes    gauge  Amounts of memory allocated for jobs in the cluster grouped by cluster, partition, user, name, state
-jobs_mem_req_bytes      gauge  Amounts of memory requested for jobs in the cluster grouped by cluster, partition, user, name, state
-jobs_nodes_alloc        gauge   Numbers of nodes allocated for jobs in the cluster grouped by cluster, partition, user, name, state
-jobs_nodes_req          gauge   Numbers of nodes requested for jobs in the cluster grouped by cluster, partition, user, name, state
-jobs_num                gauge                       Numbers of jobs in the cluster grouped by cluster, partition, user, name, state
-nodes_cpu_load          gauge                           CPU loads on nodes in the cluster grouped by cluster, partition, name, arch
-nodes_cpus              gauge                     Numbers of CPUs on nodes in the cluster grouped by cluster, partition, name, arch
-nodes_cpus_alloc        gauge           Numbers of CPUs allocated on nodes in the cluster grouped by cluster, partition, name, arch
-nodes_mem_alloc_bytes   gauge         Amounts of memory allocated on nodes in the cluster grouped by cluster, partition, name, arch
-nodes_mem_free_bytes    gauge    Amounts of free memory allocated on nodes in the cluster grouped by cluster, partition, name, arch
-nodes_mem_total_bytes   gauge   Total amounts of memory available on nodes in the cluster grouped by cluster, partition, name, arch
-partitions_state        gauge                                                             Partition states grouped by cluster, name
-partitions_total_cpus   gauge                                          Total numbers of CPUs per partition grouped by cluster, name
-partitions_total_nodes  gauge                                         Total numbers of nodes per partition grouped by cluster, name
+slurm_jobs_cpus_alloc         gauge    Numbers of CPUs allocated for jobs in the cluster grouped by cluster, partition, user, name, state
+slurm_jobs_cpus_req           gauge    Numbers of CPUs requested for jobs in the cluster grouped by cluster, partition, user, name, state
+slurm_jobs_mem_alloc_bytes    gauge  Amounts of memory allocated for jobs in the cluster grouped by cluster, partition, user, name, state
+slurm_jobs_mem_req_bytes      gauge  Amounts of memory requested for jobs in the cluster grouped by cluster, partition, user, name, state
+slurm_jobs_nodes_alloc        gauge   Numbers of nodes allocated for jobs in the cluster grouped by cluster, partition, user, name, state
+slurm_jobs_nodes_req          gauge   Numbers of nodes requested for jobs in the cluster grouped by cluster, partition, user, name, state
+slurm_jobs_num                gauge                       Numbers of jobs in the cluster grouped by cluster, partition, user, name, state
+slurm_nodes_cpu_load          gauge                           CPU loads on nodes in the cluster grouped by cluster, partition, name, arch
+slurm_nodes_cpus              gauge                     Numbers of CPUs on nodes in the cluster grouped by cluster, partition, name, arch
+slurm_nodes_cpus_alloc        gauge           Numbers of CPUs allocated on nodes in the cluster grouped by cluster, partition, name, arch
+slurm_nodes_mem_alloc_bytes   gauge         Amounts of memory allocated on nodes in the cluster grouped by cluster, partition, name, arch
+slurm_nodes_mem_free_bytes    gauge    Amounts of free memory allocated on nodes in the cluster grouped by cluster, partition, name, arch
+slurm_nodes_mem_total_bytes   gauge   Total amounts of memory available on nodes in the cluster grouped by cluster, partition, name, arch
+slurm_partitions_state        gauge                                                             Partition states grouped by cluster, name
+slurm_partitions_total_cpus   gauge                                          Total numbers of CPUs per partition grouped by cluster, name
+slurm_partitions_total_nodes  gauge                                         Total numbers of nodes per partition grouped by cluster, name
 ```
 
 The labels used for each metric are mentioned in the help section after `grouped by`. Job resource requirements and allocations are extracted from the respective TRES strings.
@@ -78,3 +78,21 @@ In `prometheus.yml` under the `scrape_configs` section add the following:
 Then reload the configuration and check the graph console for the new metrics.
 
 Note: Check the target status to see how much time does it take for Prometheus to collect the metrics and how does it relate to the monitoring interval. The interval may need to be adjusted depending on the cluster size, ie. numbers of nodes or jobs running/pending, which then determines the size of metrics data.
+
+### PromQL examples
+
+All metric names and labels are listed at the top of this document. The names start with the `slurm_` prefix, so are easy to locate in the dropdowm in Prometheus graph console.
+
+To get the number of jobs running in the cluster type:
+
+```sum(slurm_jobs_num{state='RUNNING'})```
+
+To get the number of CPUs allocated to running jobs vs. the total number of CPUs available in the cluster type:
+
+```sum(slurm_jobs_cpus_alloc{state='RUNNING'})```
+
+To the the number of all CPUs available in the cluster type:
+
+```sum(slurm_partitions_cpus_total)```
+
+To compare the numbers of CPUs allocated vs. CPUs total the last two queries can be plotted on 2 graphs in Prometheus or on a single one in another graphing software, ie. Grafana.
