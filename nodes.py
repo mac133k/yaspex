@@ -6,9 +6,15 @@ from prometheus_client.core import GaugeMetricFamily
 
 class NodeInfoCollector(object):
 	# Node properties of interest
-	props = ['name', 'partitions', 'arch', 'cpus', 'cpu_load', 'free_mem', 'real_memory', 'alloc_cpus', 'alloc_mem']
+	props = ['partitions', 'cpus', 'cpu_load', 'free_mem', 'real_memory', 'alloc_cpus', 'alloc_mem']
 	# Metric labels
-	labels = ['cluster', 'partition', 'name', 'arch']
+	labels = ['cluster', 'partition']
+	if 'METRIC_LABEL_NODE_NAME' in os.environ and os.environ['METRIC_LABEL_NODE_NAME'].lower() == 'include':
+		props.append('name')
+		labels.append('name')
+	if 'METRIC_LABEL_NODE_ARCH' in os.environ and os.environ['METRIC_LABEL_NODE_ARCH'].lower() == 'include':
+		props.append('arch')
+		labels.append('arch')
 	
 	def collect(self):
 		# Metric declarations
@@ -21,7 +27,6 @@ class NodeInfoCollector(object):
 		
 		# Load node info from Slurm
 		df = pd.DataFrame().from_dict(pyslurm.node().get(), orient='index').loc[:, self.props]
-		df['cluster'] = pyslurm.config().get()['cluster_name']
 		# Tidy up the columns
 		df = df.explode('partitions')
 		df.rename(columns={
@@ -32,8 +37,11 @@ class NodeInfoCollector(object):
 				'alloc_cpus':	'cpus_alloc'
 			}, inplace=True
 		)
-		df.loc[:, self.labels] = df.loc[:, self.labels].fillna('NA')
+		df.loc[:, self.labels[1:]] = df.loc[:, self.labels[1:]].fillna('NA')
 		df = df.fillna(0.0)
+		if len(self.labels) < 3:
+			df = df.groupby(self.labels[1:]).sum().reset_index()
+		df['cluster'] = pyslurm.config().get()['cluster_name']
 		df['cpu_load'] /= 100.0
 		df.loc[:, ['mem_total', 'mem_alloc']] *= 1000**2 # MB to Bytes
 		df['mem_free'] *= 2**20 # MiB to Bytes
