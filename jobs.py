@@ -10,10 +10,9 @@ class JobInfoCollector(object):
 	props = ['partition', 'name', 'job_state', 'user_id', 'tres_req_str', 'tres_alloc_str']
 	# Metric labels
 	labels = ['cluster', 'partition', 'user', 'name', 'state']
-	if 'METRIC_LABEL_JOB_ID' in os.environ:
-		if os.environ['METRIC_LABEL_JOB_ID'].lower() == 'include':
-			props.append('job_id')
-			labels.append('id')
+	if 'METRIC_LABEL_JOB_ID' in os.environ and os.environ['METRIC_LABEL_JOB_ID'].lower() == 'include':
+		props.append('job_id')
+		labels.append('id')
 	
 	def collect(self):
 		# Metric declarations
@@ -49,16 +48,28 @@ class JobInfoCollector(object):
 		df['job_num'] = job_num
 		df['cluster'] = pyslurm.config().get()['cluster_name']
 		# Update the metrics
-		df.apply(lambda row: [
-				JOBS_NUM.add_metric(row[self.labels], row['job_num']),
-				JOBS_CPUS_REQ.add_metric(row[self.labels], row['cpus_req']),
-				JOBS_CPUS_ALLOC.add_metric(row[self.labels], row['cpus_alloc']),	
-				JOBS_MEM_REQ.add_metric(row[self.labels], row['mem_req']),
-				JOBS_MEM_ALLOC.add_metric(row[self.labels], row['mem_alloc']),	
-				JOBS_NODES_REQ.add_metric(row[self.labels], row['nodes_req']),
-				JOBS_NODES_ALLOC.add_metric(row[self.labels], row['nodes_alloc']),	
-			], axis=1, raw=True
-		)
+		if 'METRIC_VALUE_NULL' in os.environ and os.environ['METRIC_VALUE_NULL'].lower() == 'include':
+			df.apply(lambda row: [
+					JOBS_NUM.add_metric(row[self.labels], row['job_num']),
+					JOBS_CPUS_REQ.add_metric(row[self.labels], row['cpus_req']),
+					JOBS_CPUS_ALLOC.add_metric(row[self.labels], row['cpus_alloc']),	
+					JOBS_MEM_REQ.add_metric(row[self.labels], row['mem_req']),
+					JOBS_MEM_ALLOC.add_metric(row[self.labels], row['mem_alloc']),	
+					JOBS_NODES_REQ.add_metric(row[self.labels], row['nodes_req']),
+					JOBS_NODES_ALLOC.add_metric(row[self.labels], row['nodes_alloc']),	
+				], axis=1, raw=False
+			)
+		else:
+			df.apply(lambda row: [
+					JOBS_NUM.add_metric(row[self.labels], row['job_num']) if row['job_num'] > 0 else None,
+					JOBS_CPUS_REQ.add_metric(row[self.labels], row['cpus_req']) if row['cpus_req'] > 0 else None,
+					JOBS_CPUS_ALLOC.add_metric(row[self.labels], row['cpus_alloc']) if row['cpus_alloc'] > 0 else None,	
+					JOBS_MEM_REQ.add_metric(row[self.labels], row['mem_req']) if row['mem_req'] > 0 else None,
+					JOBS_MEM_ALLOC.add_metric(row[self.labels], row['mem_alloc']) if row['mem_alloc'] > 0 else None,	
+					JOBS_NODES_REQ.add_metric(row[self.labels], row['nodes_req']) if row['nodes_req'] > 0 else None,
+					JOBS_NODES_ALLOC.add_metric(row[self.labels], row['nodes_alloc']) if row['nodes_alloc'] > 0 else None,	
+				], axis=1, raw=False
+			)
 		yield JOBS_NUM
 		yield JOBS_CPUS_REQ
 		yield JOBS_CPUS_ALLOC

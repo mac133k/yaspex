@@ -1,3 +1,4 @@
+import os
 import pyslurm
 import pandas as pd
 from prometheus_client.core import GaugeMetricFamily
@@ -37,15 +38,28 @@ class NodeInfoCollector(object):
 		df.loc[:, ['mem_total', 'mem_alloc']] *= 1000**2 # MB to Bytes
 		df['mem_free'] *= 2**20 # MiB to Bytes
 		# Update the metrics
-		df.apply(lambda row: [
-				NODES_CPUS.add_metric(row[self.labels], row['cpus']),	
-				NODES_CPUS_ALLOC.add_metric(row[self.labels], row['cpus_alloc']),	
-				NODES_CPU_LOAD.add_metric(row[self.labels], row['cpu_load']),	
-				NODES_MEM_TOTAL.add_metric(row[self.labels], row['mem_total']),	
-				NODES_MEM_FREE.add_metric(row[self.labels], row['mem_free']),	
-				NODES_MEM_ALLOC.add_metric(row[self.labels], row['mem_alloc']),	
-			], axis=1, raw=True
-		)
+		if 'METRIC_VALUE_NULL' in os.environ and os.environ['METRIC_VALUE_NULL'].lower() == 'include':
+			df.apply(lambda row: [
+					NODES_CPUS.add_metric(row[self.labels], row['cpus']),	
+					NODES_CPUS_ALLOC.add_metric(row[self.labels], row['cpus_alloc']),	
+					NODES_CPU_LOAD.add_metric(row[self.labels], row['cpu_load']),	
+					NODES_MEM_TOTAL.add_metric(row[self.labels], row['mem_total']),	
+					NODES_MEM_FREE.add_metric(row[self.labels], row['mem_free']),	
+					NODES_MEM_ALLOC.add_metric(row[self.labels], row['mem_alloc']),	
+				], axis=1, raw=True
+			)
+		else:
+			int_cols = ['mem_total', 'mem_free', 'mem_alloc', 'cpus', 'cpus_alloc']
+			df.loc[:, int_cols] = df.loc[:, int_cols].astype(int)
+			df.apply(lambda row: [
+					NODES_CPUS.add_metric(row[self.labels], row['cpus']) if row['cpus'] > 0 else None,	
+					NODES_CPUS_ALLOC.add_metric(row[self.labels], row['cpus_alloc']) if row['cpus_alloc'] > 0 else None,	
+					NODES_CPU_LOAD.add_metric(row[self.labels], row['cpu_load']) if row['cpu_load'] > 0 else None,	
+					NODES_MEM_TOTAL.add_metric(row[self.labels], row['mem_total']) if row['mem_total'] > 0 else None,	
+					NODES_MEM_FREE.add_metric(row[self.labels], row['mem_free']) if row['mem_free'] > 0 else None,	
+					NODES_MEM_ALLOC.add_metric(row[self.labels], row['mem_alloc']) if row['mem_alloc'] > 0 else None,	
+				], axis=1, raw=True
+			)
 		yield NODES_CPUS
 		yield NODES_CPUS_ALLOC
 		yield NODES_CPU_LOAD
