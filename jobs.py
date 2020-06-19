@@ -1,3 +1,4 @@
+import os
 import pwd
 import pyslurm
 import pandas as pd
@@ -9,6 +10,10 @@ class JobInfoCollector(object):
 	props = ['partition', 'name', 'job_state', 'user_id', 'tres_req_str', 'tres_alloc_str']
 	# Metric labels
 	labels = ['cluster', 'partition', 'user', 'name', 'state']
+	if 'METRIC_LABEL_JOB_ID' in os.environ:
+		if os.environ['METRIC_LABEL_JOB_ID'].lower() == 'include':
+			props.append('job_id')
+			labels.append('id')
 	
 	def collect(self):
 		# Metric declarations
@@ -34,7 +39,9 @@ class JobInfoCollector(object):
 		df['nodes_alloc'] = df.tres_alloc_str.str.extract(r'node=(?P<nodes_alloc>[0-9]+)').fillna(0).astype(int) 
 		# Tidy up the columns
 		df.drop(columns=['user_id', 'tres_req_str', 'tres_alloc_str'], inplace=True)
-		df.rename(columns={'job_state': 'state'}, inplace=True)
+		df.rename(columns={'job_state': 'state', 'job_id': 'id'}, inplace=True)
+		if 'id' in df.columns:
+			df['id'] = df.id.astype(str)
 		# Aggregate rows
 		job_num = df.groupby(self.labels[1:]).count().iloc[:,-1].values
 		df = df.groupby(self.labels[1:]).sum().reset_index()
