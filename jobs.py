@@ -1,5 +1,4 @@
 import os
-import pwd
 import pyslurm
 import pandas as pd
 from prometheus_client.core import GaugeMetricFamily
@@ -7,9 +6,12 @@ from prometheus_client.core import GaugeMetricFamily
 
 class JobInfoCollector(object):
 	# Job properties of interest
-	props = ['partition', 'name', 'job_state', 'user_id', 'tres_req_str', 'tres_alloc_str']
+	props = ['partition', 'name', 'job_state', 'tres_req_str', 'tres_alloc_str']
 	# Metric labels
-	labels = ['cluster', 'partition', 'user', 'name', 'state']
+	labels = ['cluster', 'partition', 'name', 'state']
+	if 'METRIC_LABEL_USER_ID' in os.environ and os.environ['METRIC_LABEL_USER_ID'].lower() == 'include':
+		props.append('user_id')
+		labels.append('user')
 	if 'METRIC_LABEL_JOB_ID' in os.environ and os.environ['METRIC_LABEL_JOB_ID'].lower() == 'include':
 		props.append('job_id')
 		labels.append('id')
@@ -27,7 +29,10 @@ class JobInfoCollector(object):
 		# Load job info from Slurm
 		df = pd.DataFrame().from_dict(pyslurm.job().get(), orient='index').loc[:, self.props]
 		# Translate user IDs to names
-		df['user'] = df.user_id.apply(lambda uid: pwd.getpwuid(uid).pw_name)
+		if 'user' in self.labels:
+			import pwd
+			df['user'] = df.user_id.apply(lambda uid: pwd.getpwuid(uid).pw_name)
+			df.drop(columns=['user_id'], inplace=True)
 		# Extract TRES req
 		df['cpus_req'] = df.tres_req_str.str.extract(r'cpu=(?P<cpus_req>[0-9]+)').fillna(0).astype(int) 
 		df['mem_req'] = df.tres_req_str.str.extract(r'mem=(?P<mem_req>[0-9]+)').fillna(0).astype(int) 
@@ -37,7 +42,7 @@ class JobInfoCollector(object):
 		df['mem_alloc'] = df.tres_alloc_str.str.extract(r'mem=(?P<mem_alloc>[0-9]+)').fillna(0).astype(int) 
 		df['nodes_alloc'] = df.tres_alloc_str.str.extract(r'node=(?P<nodes_alloc>[0-9]+)').fillna(0).astype(int) 
 		# Tidy up the columns
-		df.drop(columns=['user_id', 'tres_req_str', 'tres_alloc_str'], inplace=True)
+		df.drop(columns=['tres_req_str', 'tres_alloc_str'], inplace=True)
 		df.rename(columns={'job_state': 'state', 'job_id': 'id'}, inplace=True)
 		if 'id' in df.columns:
 			df['id'] = df.id.astype(str)
