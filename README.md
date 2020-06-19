@@ -3,7 +3,11 @@ Yet Another Slurm-to-Prometheus EXporter
 
 ## How is it different from others?
 
-It is written in Python and it uses pyslurm to communicate with the Slurm cluster, so it should be easy to install and set up for Slurm users. It also has a rich collection of metrics:
+It is written in Python and it uses pyslurm to communicate with the Slurm cluster, so it should be easy to install and set up for Slurm users. It also has a rich collection of metrics.
+
+## Metrics
+
+YASPEx provides the following metrics:
 
 ```
   name                        type                                    help
@@ -26,7 +30,7 @@ slurm_partitions_total_cpus   gauge                                          Tot
 slurm_partitions_total_nodes  gauge                                         Total numbers of nodes per partition grouped by cluster, name
 ```
 
-The labels used for each metric are mentioned in the help section after `grouped by`. Job resource requirements and allocations are extracted from the respective TRES strings.
+The labels used for each metric are mentioned in the help section after `grouped by`. Some labels can be included or ignored depends on the settings in `conf/env.sh` described in the configuration section below. Job resource requirements and allocations are extracted from the respective TRES strings.
 
 ## How does it work?
 
@@ -59,6 +63,22 @@ cp conf/env.sh.template conf/env.sh
 ```
 
 Edit `conf/env.sh` and make sure the `SLURM_HOME` path is set correctly. Extra settings for fine-tuning or debugging can be passed to gunicorn as a command line options string in the GUNICORN_OPTS variable.
+
+#### Metric settings
+
+There are settings to include or ignore specific labels, or null/zero values which all are set to `ignore` by default:
+
+```
+export METRIC_LABEL_JOB_ID=ignore
+export METRIC_LABEL_USER_ID=ignore
+export METRIC_LABEL_NODE_NAME=ignore
+export METRIC_LABEL_NODE_ARCH=ignore
+export METRIC_VALUE_NULL=ignore
+```
+
+Ingoring a label affects the metric aggregation and decreases the canrdinality which means there is less lines to collect from the `/metrics` endpoint. These settings should be optimized according to the size of the cluster and the throughput, and the desired level of details of the metric data for further analysis or visualisation. 
+
+Similarly ignoring all metrics with zero values reduces the size of the `/metrics` output and in effect the size of the storage in TSDB. Note however that some labels may be missing from the data set, ie. if there nodes or partitions in the cluster that are not used and have all metrics at 0, the metrics with the corresponding labels will not be recorded and will not be available in the TSDB.
 
 ## Starting and stopping
 
