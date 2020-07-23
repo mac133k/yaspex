@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# This script calls all data extractors to extract raw data from Slurm API.
-
 APP_HOME=$(dirname $(realpath $0))
 . $APP_HOME/conf/env.sh
 APP_VAR=$APP_HOME/var
