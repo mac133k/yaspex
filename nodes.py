@@ -1,8 +1,6 @@
 import os
 import pyslurm
-import pandas as pd
 from prometheus_client.core import GaugeMetricFamily
-
 
 class NodeInfoCollector(object):
 	# Node properties of interest
@@ -26,48 +24,26 @@ class NodeInfoCollector(object):
 		NODES_MEM_ALLOC = GaugeMetricFamily('slurm_nodes_mem_alloc', 'Amounts of memory allocated on nodes in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels, unit='bytes')
 		
 		# Load node info from Slurm
-		df = pd.DataFrame().from_dict(pyslurm.node().get(), orient='index').loc[:, self.props]
-		# Tidy up the columns
-		df = df.explode('partitions')
-		df.rename(columns={
-				'partitions':	'partition',
-				'free_mem':	'mem_free',
-				'real_memory':	'mem_total',
-				'alloc_mem':	'mem_alloc',
-				'alloc_cpus':	'cpus_alloc'
-			}, inplace=True
-		)
-		df.loc[:, self.labels[1:]] = df.loc[:, self.labels[1:]].fillna('NA')
-		df = df.fillna(0.0)
-		if len(self.labels) < 3:
-			df = df.groupby(self.labels[1:]).sum().reset_index()
-		df['cluster'] = pyslurm.config().get()['cluster_name']
-		df['cpu_load'] /= 100.0
-		df.loc[:, ['mem_total', 'mem_alloc']] *= 1000**2 # MB to Bytes
-		df['mem_free'] *= 2**20 # MiB to Bytes
-		# Update the metrics
-		if 'METRIC_VALUE_NULL' in os.environ and os.environ['METRIC_VALUE_NULL'].lower() == 'include':
-			df.apply(lambda row: [
-					NODES_CPUS.add_metric(row[self.labels], row['cpus']),	
-					NODES_CPUS_ALLOC.add_metric(row[self.labels], row['cpus_alloc']),	
-					NODES_CPU_LOAD.add_metric(row[self.labels], row['cpu_load']),	
-					NODES_MEM_TOTAL.add_metric(row[self.labels], row['mem_total']),	
-					NODES_MEM_FREE.add_metric(row[self.labels], row['mem_free']),	
-					NODES_MEM_ALLOC.add_metric(row[self.labels], row['mem_alloc']),	
-				], axis=1, raw=True
-			)
-		else:
-			int_cols = ['mem_total', 'mem_free', 'mem_alloc', 'cpus', 'cpus_alloc']
-			df.loc[:, int_cols] = df.loc[:, int_cols].astype(int)
-			df.apply(lambda row: [
-					NODES_CPUS.add_metric(row[self.labels], row['cpus']) if row['cpus'] > 0 else None,	
-					NODES_CPUS_ALLOC.add_metric(row[self.labels], row['cpus_alloc']) if row['cpus_alloc'] > 0 else None,	
-					NODES_CPU_LOAD.add_metric(row[self.labels], row['cpu_load']) if row['cpu_load'] > 0 else None,	
-					NODES_MEM_TOTAL.add_metric(row[self.labels], row['mem_total']) if row['mem_total'] > 0 else None,	
-					NODES_MEM_FREE.add_metric(row[self.labels], row['mem_free']) if row['mem_free'] > 0 else None,	
-					NODES_MEM_ALLOC.add_metric(row[self.labels], row['mem_alloc']) if row['mem_alloc'] > 0 else None,	
-				], axis=1, raw=True
-			)
+		nodes = pyslurm.node().get()
+		cluster = pyslurm.config().get()['cluster_name']
+		for node in nodes.keys():
+			labels_ = [node[l] for l in self.labels]
+			for partition in node['partitions']:
+				labels_ = [cluster, partition] + labels_
+				if 'METRIC_VALUE_NULL' in os.environ and os.environ['METRIC_VALUE_NULL'].lower() == 'include':
+					NODES_CPUS.add_metric(labels, node['cpus'])
+					NODES_CPUS_ALLOC.add_metric(labels, node['alloc_cpus'])
+					NODES_CPU_LOAD.add_metric(labels, node['cpu_load']/100.0)
+					NODES_MEM_TOTAL.add_metric(labels, node['real_memory')*1000**2) # MB to Bytes
+					NODES_MEM_ALLOC.add_metric(labels, node['alloc_mem')*1000**2)   # MB to Bytes
+					NODES_MEM_FREE.add_metric(labels,  node['free_mem']*2**20)      # MiB to Bytes
+				else:
+					NODES_CPUS.add_metric(labels, node['cpus'])			if node['cpus'] > 0 else None
+					NODES_CPUS_ALLOC.add_metric(labels, node['alloc_cpus'])		if node['alloc_cpus'] > 0 else None
+					NODES_CPU_LOAD.add_metric(labels, node['cpu_load']/100.0) 	if node['cpu_load'] > 0 else None
+					NODES_MEM_TOTAL.add_metric(labels, node['real_memory']*1000**2)	if node['real_memory'] > 0 else None
+					NODES_MEM_ALLOC.add_metric(labels, node['alloc_mem']*1000**2)	if node['alloc_mem'] > 0 else None
+					NODES_MEM_FREE.add_metric(labels,  node['free_mem']*2**20)	if node['free_mem'] > 0 else None
 		yield NODES_CPUS
 		yield NODES_CPUS_ALLOC
 		yield NODES_CPU_LOAD
