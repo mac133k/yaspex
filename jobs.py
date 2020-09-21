@@ -1,11 +1,13 @@
 import os
+import re
+import pwd
 import pyslurm
 from prometheus_client.core import GaugeMetricFamily
 
 
 class JobInfoCollector(object):
 	# Job properties of interest
-	props = ['partition', 'name', 'job_state', 'tres_req_str', 'tres_alloc_str']
+	props = ['partition', 'name', 'job_state']
 	# Metric labels
 	labels = ['cluster', 'partition', 'name', 'state']
 	if 'METRIC_LABEL_USER_ID' in os.environ and os.environ['METRIC_LABEL_USER_ID'].lower() == 'include':
@@ -36,44 +38,48 @@ class JobInfoCollector(object):
 		for job_id in jobs.keys():
 			labels_ = [cluster]
 			for prop in self.props:
-				if prop == 'user_id' in labels_:
-					user_ = jobs[job_id]['user_id']
+				if prop == 'user_id':
+					user_ = (str(jobs[job_id]['user_id']))
 					try:
 						user_ = pwd.getpwuid(user_).pw_name
 					except:
 						pass
 					labels_.append(user_)
 				else:
-					labels_.append(jobs[job_id][prop])
+					labels_.append(str(jobs[job_id][prop]))
 
-			JOBS_NUM.add_metric(labels, 1.0)
+			JOBS_NUM.add_metric(labels_, 1.0)
 			# Extract requirements and allocations
 			if 'METRIC_VALUE_NULL' in os.environ and os.environ['METRIC_VALUE_NULL'].lower() == 'include':
-				m = rgx_cpu.search(jobs[job_id]['tres_req_str'])
-				JOBS_CPUS_REQ.add_metric(labels, m.group(1) if m else None)
-				m = rgx_cpu.search(jobs[job_id]['tres_alloc_str'])
-				JOBS_CPUS_ALLOC.add_metric(labels, m.group(1) if m else None)
-				m = rgx_mem.search(jobs[job_id]['tres_req_str'])
-				JOBS_MEM_REQ.add_metric(labels, int(m.group(1))*1000**2 if m else None)
-				m = rgx_mem.search(jobs[job_id]['tres_alloc_str'])
-				JOBS_MEM_ALLOC.add_metric(labels, int(m.group(1))*1000**2 if m else None)
-				m = rgx_node.search(jobs[job_id]['tres_req_str'])
-				JOBS_NODES_REQ.add_metric(labels, m.group(1) if m else None)
-				m = rgx_node.search(jobs[job_id]['tres_alloc_str'])
-				JOBS_NODES_ALLOC.add_metric(labels, m.group(1) if m else None)
+				if 'tres_res_str' in jobs[job_id].keys() and jobs[job_id]['tres_res_str']:
+					m = rgx_cpu.search(jobs[job_id]['tres_req_str'])
+					JOBS_CPUS_REQ.add_metric(labels_, int(m.group(1)) if m else None)
+					m = rgx_mem.search(jobs[job_id]['tres_req_str'])
+					JOBS_MEM_REQ.add_metric(labels_, int(m.group(1))*1000**2 if m else None)
+					m = rgx_node.search(jobs[job_id]['tres_req_str'])
+					JOBS_NODES_REQ.add_metric(labels_, int(m.group(1)) if m else None)
+				if 'tres_alloc_str' in jobs[job_id].keys() and jobs[job_id]['tres_alloc_str']:
+					m = rgx_cpu.search(jobs[job_id]['tres_alloc_str'])
+					JOBS_CPUS_ALLOC.add_metric(labels_, int(m.group(1)) if m else None)
+					m = rgx_mem.search(jobs[job_id]['tres_alloc_str'])
+					JOBS_MEM_ALLOC.add_metric(labels_, int(m.group(1))*1000**2 if m else None)
+					m = rgx_node.search(jobs[job_id]['tres_alloc_str'])
+					JOBS_NODES_ALLOC.add_metric(labels_, int(m.group(1)) if m else None)
 			else:
-				m = rgx_cpu.search(jobs[job_id]['tres_req_str'])
-				JOBS_CPUS_REQ.add_metric(labels, m.group(1)) if m else None
-				m = rgx_cpu.search(jobs[job_id]['tres_alloc_str'])
-				JOBS_CPUS_ALLOC.add_metric(labels, m.group(1)) if m else None
-				m = rgx_mem.search(jobs[job_id]['tres_req_str'])
-				JOBS_MEM_REQ.add_metric(labels, int(m.group(1))*1000**2) if m else None
-				m = rgx_mem.search(jobs[job_id]['tres_alloc_str'])
-				JOBS_MEM_ALLOC.add_metric(labels, int(m.group(1))*1000**2) if m else None
-				m = rgx_node.search(jobs[job_id]['tres_req_str'])
-				JOBS_NODES_REQ.add_metric(labels, m.group(1)) if m else None
-				m = rgx_node.search(jobs[job_id]['tres_alloc_str'])
-				JOBS_NODES_ALLOC.add_metric(labels, m.group(1)) if m else None
+				if 'tres_res_str' in jobs[job_id].keys() and jobs[job_id]['tres_res_str']:
+					m = rgx_cpu.search(jobs[job_id]['tres_req_str'])
+					JOBS_CPUS_REQ.add_metric(labels_, int(m.group(1))) if m else None
+					m = rgx_mem.search(jobs[job_id]['tres_req_str'])
+					JOBS_MEM_REQ.add_metric(labels_, int(m.group(1))*1000**2) if m else None
+					m = rgx_node.search(jobs[job_id]['tres_req_str'])
+					JOBS_NODES_REQ.add_metric(labels_, int(m.group(1))) if m else None
+				if 'tres_alloc_str' in jobs[job_id].keys() and jobs[job_id]['tres_alloc_str']:
+					m = rgx_cpu.search(jobs[job_id]['tres_alloc_str'])
+					JOBS_CPUS_ALLOC.add_metric(labels_, int(m.group(1))) if m else None
+					m = rgx_mem.search(jobs[job_id]['tres_alloc_str'])
+					JOBS_MEM_ALLOC.add_metric(labels_, int(m.group(1))*1000**2) if m else None
+					m = rgx_node.search(jobs[job_id]['tres_alloc_str'])
+					JOBS_NODES_ALLOC.add_metric(labels_, int(m.group(1))) if m else None
 		yield JOBS_NUM
 		yield JOBS_CPUS_REQ
 		yield JOBS_CPUS_ALLOC
