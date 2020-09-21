@@ -1,5 +1,4 @@
 import pyslurm
-import pandas as pd
 from prometheus_client.core import GaugeMetricFamily
 
 
@@ -16,15 +15,13 @@ class PartitionInfoCollector(object):
 		PART_STATE = GaugeMetricFamily('slurm_partitions_state', 'Partition states grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
 		
 		# Load part info from Slurm
-		df = pd.DataFrame().from_dict(pyslurm.partition().get(), orient='index').loc[:, self.props]
-		df['cluster'] = pyslurm.config().get()['cluster_name']
+		cluster = pyslurm.config().get()['cluster_name']
+		partitions = pyslurm.partition().get()
 		# Update the metrics
-		df.apply(lambda row: [
-				PART_NODES.add_metric(row[self.labels], row['total_nodes']),
-				PART_CPUS.add_metric(row[self.labels], row['total_cpus']),
-				PART_STATE.add_metric(row[self.labels], int(row['state'] == 'UP')),
-			], axis=1, raw=True
-		)
+		for partition in partitions.keys():
+			PART_NODES.add_metric([cluster, partition], partitions[partition]['total_nodes'])
+			PART_CPUS.add_metric( [cluster, partition], partitions[partition]['total_cpus'])
+			PART_STATE.add_metric([cluster, partition], int(partitions[partition]['state'] == 'UP'))
 		yield PART_NODES
 		yield PART_CPUS
 		yield PART_STATE
