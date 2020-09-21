@@ -27,7 +27,7 @@ class NodeInfoCollector(object):
 		nodes = pyslurm.node().get()
 		cluster = pyslurm.config().get()['cluster_name']
 		for node in nodes.keys():
-			labels_ = [node[l] for l in self.labels]
+			labels_ = [node[l] for l in self.props]
 			for partition in node['partitions']:
 				labels_ = [cluster, partition] + labels_
 				if 'METRIC_VALUE_NULL' in os.environ and os.environ['METRIC_VALUE_NULL'].lower() == 'include':
