@@ -17,6 +17,14 @@ class JobInfoCollector(object):
 		props.append('job_id')
 		labels.append('id')
 	
+	def get_user_name(self, uid):
+		try:
+			uname = pwd.getpwuid(uid).pw_name
+		except:
+			uname = str(uid)
+		return uname
+		
+
 	def collect(self):
 		# Metric declarations
 		JOBS_NUM = GaugeMetricFamily('slurm_jobs_num', 'Numbers of jobs in the cluster grouped by {}'.format(', '.join(self.labels)), labels=self.labels)
@@ -36,18 +44,7 @@ class JobInfoCollector(object):
 		rgx_node = re.compile(r'node=([0-9]+)')
 		# Update the metrics
 		for job_id in jobs.keys():
-			labels_ = [cluster]
-			for prop in self.props:
-				if prop == 'user_id':
-					user_ = (str(jobs[job_id]['user_id']))
-					try:
-						user_ = pwd.getpwuid(user_).pw_name
-					except:
-						pass
-					labels_.append(user_)
-				else:
-					labels_.append(str(jobs[job_id][prop]))
-
+			labels_ = [cluster] + [self.get_user_name(jobs[job_id][prop]) if prop == 'user_id' else str(jobs[job_id][prop]) for prop in self.props]
 			JOBS_NUM.add_metric(labels_, 1.0)
 			# Extract requirements and allocations
 			if 'METRIC_VALUE_NULL' in os.environ and os.environ['METRIC_VALUE_NULL'].lower() == 'include':
