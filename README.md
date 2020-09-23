@@ -36,7 +36,7 @@ The labels used for each metric are mentioned in the help section after `grouped
 
 One instance of YASPEx can monitor only one Slurm cluster. It does not need to run on a cluster node, but must be able to communicate with Slurm master, so Munge keys and Slurm conf must be locally available.
 
-YASPEx gets the job, partition and node data from Slurm using PySlurm, converts the dictionaries to Pandas dataframes, performs data clean-ups and aggregations, then saves the results in the Prometheus client's metrics registry.
+YASPEx gets the job, partition and node data from Slurm using PySlurm, generates metrics and saves the results in the Prometheus client's registry.
 
 ## Installation
 
@@ -50,7 +50,7 @@ The host where YASPEx is installed must be able to connect to the monitored Slur
 Make sure to use Python v3+ and install the following modules:
 
 ```
-pip install pandas prometheus_client gunicorn flask
+pip install prometheus_client gunicorn flask
 ```
 
 ### Configuration
